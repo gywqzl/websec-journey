@@ -16,6 +16,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | [`day19/`](day19/) | Python POST 登录 + 会话保持（CookieJar） |
 | [`day20/`](day20/) | 本地靶场（LAMP + DVWA）+ 反射型 XSS |
 | [`day21/`](day21/) | PortSwigger 官方靶场（第一个 lab：反射型 XSS） |
+| [`day22/`](day22/) | 存储型 XSS（Stored XSS）：DVWA + PortSwigger lab |
 
 ## 学习进度
 
@@ -25,6 +26,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | 19 | Python 发带数据的请求 + 会话（CookieJar） | [`day19/login19.py`](day19/login19.py) |
 | 20 | 本地靶场（LAMP/DVWA）+ 反射型 XSS | [`day20/README.md`](day20/README.md) |
 | 21 | PortSwigger 官方靶场：第一个 lab（反射型 XSS，未编码） | [`day21/README.md`](day21/README.md) |
+| 22 | 存储型 XSS（Stored XSS）+ 逐字段试 | [`day22/README.md`](day22/README.md) |
 
 （以后每学完一天，就在这里加一行）
 
