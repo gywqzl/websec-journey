@@ -17,6 +17,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | [`day20/`](day20/) | 本地靶场（LAMP + DVWA）+ 反射型 XSS |
 | [`day21/`](day21/) | PortSwigger 官方靶场（第一个 lab：反射型 XSS） |
 | [`day22/`](day22/) | 存储型 XSS（Stored XSS）：DVWA + PortSwigger lab |
+| [`day23/`](day23/) | 属性上下文 XSS：不用标签，靠属性注入（PortSwigger） |
 
 ## 学习进度
 
@@ -27,6 +28,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | 20 | 本地靶场（LAMP/DVWA）+ 反射型 XSS | [`day20/README.md`](day20/README.md) |
 | 21 | PortSwigger 官方靶场：第一个 lab（反射型 XSS，未编码） | [`day21/README.md`](day21/README.md) |
 | 22 | 存储型 XSS（Stored XSS）+ 逐字段试 | [`day22/README.md`](day22/README.md) |
+| 23 | 属性上下文 XSS（attribute context）+ 事件属性 / autofocus | [`day23/README.md`](day23/README.md) |
 
 （以后每学完一天，就在这里加一行）
 
