@@ -410,6 +410,142 @@ var searchTerms = '</script><script>alert(1)</script>';
 
 ---
 
+## Day 25 · DOM 型 XSS（DOM-based XSS）：服务器从没见过你的 payload
+
+### 三类 XSS 的分水岭（精修版）
+
+| 类型 | 服务器拼过吗 | 存下来了吗 | `Ctrl+U` 搜得到吗 |
+|---|---|---|---|
+| Reflected | ✅ 当场拼进响应 | ❌ | ✅ |
+| Stored | ✅ 从库里取出来拼 | ✅ | ✅ |
+| **DOM** | **❌ 只发死页面** | ❌ | **❌** |
+
+> 「`Ctrl+U` 搜得到」只能**排除** DOM，**分不出** R 和 S —— 还要看「关页面重开还弹吗 / 地址栏干净吗」（Day 22 三招）。
+> **一条判据只划一条线。**
+
+### 三个「把手」：window / document / location
+
+| 对象 | 管什么 |
+|---|---|
+| `window` | 整个标签页；所有全局东西都挂在它身上 |
+| `document` | 页面内容（DOM 树） |
+| `location` | **地址栏**（只反映、不判断） |
+
+`window` 的属性可直接当全局变量用，所以 `location` ≡ `window.location`。
+
+### 地址栏拆解（`location` 字段）
+
+```
+http://localhost:8083/dom_search.html?q=hello#top
+└┬─┘   └────┬─────┘└──────┬───────┘└──┬───┘└┬─┘
+protocol   host         pathname    search  hash
+```
+
+| 字段 | 内容 | ⚠️ |
+|---|---|---|
+| `location.href` | 整个地址栏 | |
+| `location.search` | `?q=hello` | **带着 `?`** |
+| `location.hash` | `#top` | **带着 `#`，而且浏览器不发它给服务器** |
+
+### source 图鉴（攻击者能控制的入口）
+
+| source | 是什么 | 谁能让它变 |
+|---|---|---|
+| `location.search` | `?` 后面那段 | 发链接的人 |
+| `location.hash` | `#` 后面那段（**不发服务器**） | 发链接的人 |
+| `document.referrer` | 从哪个页面跳来的（= HTTP 头 `Referer` 的 JS 版） | 放链接的人 |
+| `window.name` | 跨页面还活着的字符串（同标签页） | 先打开的攻击者页面 |
+
+> ⚠️ 拼写：HTTP 头是 `Referer`（历史拼错），JS 属性是 `referrer`（拼对了）。
+
+### sink 图鉴（把字符串当代码 / HTML 处理的地方）
+
+| sink | 危险点 |
+|---|---|
+| `innerHTML` | 字符串当 HTML 解析 |
+| `document.write` | 同上；写在当前脚本位置，**页面加载完后调用会清空整个文档** |
+| `eval("字符串")` | 字符串当 **JS 代码**执行 |
+| `setTimeout("字符串", n)` | 第一个参数给字符串时按代码执行 |
+| `setAttribute("src" / "href", v)` | 值为 `javascript:` 时执行 |
+
+> 判据：**会把字符串当「语法」解析的 = sink；只当文字（`textContent`）= 不是。**
+
+### 两个「传送门」：把数据送进 HTML 解析器
+
+```js
+document.write(字符串)         // 数据 → HTML 源码
+element.innerHTML = 字符串     // 数据 → HTML 源码
+```
+
+倒进去之后，数据**立刻变成语法**，由 HTML 解析器重新读一遍。
+
+### 三种「放法」，三条命（总纲）
+
+| 放法 | 服务器怎么写 | 谁读它 | payload 身份 | 要算什么 | 例子 |
+|---|---|---|---|---|---|
+| A 放进 HTML 标签间 | `echo "<p>".$_GET['q']."</p>"` | HTML 解析器 | HTML 源码 | 标签结构 | `"><img src=x onerror=alert(1)>` |
+| B 放进 `<script>` 的字符串 | `echo "var q='".$_GET['q']."';"` | JS 引擎（在字符串里） | **JS 源码** | 转义 / 吃掉模型 | `</script><script>alert(1)</script>` |
+| C 服务器不拼、页面 JS 自己取 | 死页面 + `'...' + query + '...'` | 先 JS（当数据）→ 再 HTML | 数据 → HTML 源码 | 标签结构 | `"><img src=x onerror=alert(1)>` |
+
+> **写 payload 前先问：我的字符串最后是被谁、当什么读的？**
+
+### 「谁在读」决定字符含义
+
+| 字符 | JS 引擎 | HTML 解析器 |
+|---|---|---|
+| `//` | 注释 | 两个普通斜杠 |
+| `<` | 小于号 | 标签开始 |
+| `"` | 字符串引号 / 普通字符 | 属性值边界 |
+| `'` | 字符串边界（在 JS 里） | 普通字符 |
+
+> **注释符是方言**：JS `//` · HTML `<!-- -->` · MySQL `-- ` 或 `#` · shell `#`。
+
+### 认 DOM 型的三招
+
+1. 开页面 → 搜一个标记词 → `Ctrl+U` 搜（**搜不到**）→ `F12 Elements` 搜（**有**）
+2. `curl` 同一个 URL → `grep -c "标记词"` = **0**
+3. payload 放 `#` 后面 → 连请求都不发（`access.log` 里什么都没有）
+
+> 注意差别：payload 放 `?q=` 时，**日志里看得到这次请求**（请求行带完整 URL），只是服务器没把它拼进响应。**「日志看不到」只对 hash 成立。**
+
+### 命令行取证
+
+```bash
+# 起玩具靶场
+cd ~/day25 && python3 -m http.server 8083
+
+# 证明服务器没发过 payload（应为 0）
+curl -s "http://localhost:8083/dom_search.html?q=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E" | grep -c "onerror"
+
+# payload 放 hash：浏览器根本不发给服务器
+curl -s "http://localhost:8083/dom_hash.html#%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E" | grep -c "onerror"
+```
+
+### Console 三件套（DOM 型必备）
+
+```js
+trackSearch.toString()                             // 看函数源码：里面只有变量名，没有我的 payload
+var src = '<img src="...' + query + '">'; src      // 看真实的拼接结果
+document.body.insertAdjacentHTML("beforeend", src) // 验证这段 HTML 会不会执行
+```
+
+### ⚠️ 坑（Day 25 实录）
+
+- **以为 payload 拼进了 JS 源码** → `+ query +` 是**运行时字符串拼接**，payload 只是数据，JS 语法永远合法
+- **以为 `//` 能注释 HTML 里的东西** → HTML 不认 `//`，要用 `<!--`
+- **把 `;` `)` 塞进 HTML 层** → 那是 JS 语法，在 HTML 层全是废字符
+- **`Ctrl+U` 搜得到就断定 Reflected** → Stored 也搜得到，一条判据只能划一条线
+- **以为 payload 放 `?q=` 日志就看不到** → GET 参数在请求行里，`access.log` 记得清清楚楚；只有 `#` 后面的才真不发
+- **Console 一片红字就以为自己写错了** → 先分清环境噪音（如 `WebSocket is already in CLOSING or CLOSED state.` 是平台自己的）
+- **忘了 `document.write` 在页面加载完后调用会清空整个文档**
+
+### 🔎 Day 25 的核心一句话
+
+> **DOM 型 = 服务器发死页面，页面 JS 把「数据」从传送门（`document.write` / `innerHTML`）倒进 HTML 解析器。
+> payload 从没当过 JS 源码，所以 Day 24 的转义功夫在这儿用不上，用的还是 Day 23 的标签功夫。**
+
+---
+
 ## 🧩 常用组合拳（跨 Day 复用）
 
 | 场景 | 命令 |
@@ -432,3 +568,8 @@ var searchTerms = '</script><script>alert(1)</script>';
 | 选 JS 字符串的打法 | 数「服务器给哪些字符喂了 `\`」：`'` 和 `\` 全喂 → 换 `</script>`；只喂 `'` → `\';alert(1)//` |
 | 验证 payload 真的执行了 | 看弹窗 / Console，**不看 grep**；只在源码里 grep 到 = 等于没验证 |
 | 提交前反解 URL 对账 | `python3 -c "...unquote_plus('...')"` 肉眼过 `%3D`/`%3E`、`=`/`(`、括号引号 |
+| 判「是不是 DOM 型」 | `Ctrl+U` 搜 payload（搜不到）+ `F12 Elements` 搜（有）→ DOM；再 `curl` 同 URL `grep -c` = 0 佐证 |
+| 证明「服务器没参与」 | payload 放 `#` 后面 + `curl` 同 URL → `grep -c` = 0（浏览器不发 fragment） |
+| 看页面的真实拼接结果 | Console：`var s = '<前缀' + query + '后缀'; s` → 打印出来逐段读 |
+| 判断「是数据还是源码」 | 看落点：在 `'...' + query + '...'` 里 = 数据；被 `echo` 进 `<script>` 源码 = 源码（要算转义） |
+| 看页面 JS 到底怎么写的 | Console：`函数名.toString()` → 确认 payload 是在变量值里还是在源码里 |

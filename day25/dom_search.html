@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Day 25 · DOM XSS 玩具靶场（A：?q= + document.write）</title>
+</head>
+<body>
+<h2>Day 25 玩具靶场 · 版本 A</h2>
+<p>这个页面的 HTML 是一个固定的死文件。你在页面上看到的内容，全是下面的 JavaScript 现场拼出来的。</p>
+<div id="box">（这里会被 JS 写内容）</div>
+
+<script>
+// ---------- 第 1 步：source（源）—— 从地址栏的 ? 后面取参数 ----------
+var s = location.search;          // 例："?q=hello"；没参数时是空字符串 ""
+var q = "";                       // 先准备一个空值
+
+if (s.indexOf("q=") !== -1) {     // 地址栏里有没有 "q=" 这三个字符？
+  q = s.split("q=")[1];           // 按 "q=" 切开，取右边那截 → "hello" 或 "hello&x=1"
+  q = q.split("&")[0];            // 如果还有 "&"，只取最前面那段 → "hello"
+}
+
+q = decodeURIComponent(q);        // 把 %3C 这类编码还原成真字符（= Python 的 unquote）
+
+// ---------- 第 2 步：sink（汇）—— 把取到的东西写进页面 ----------
+if (q !== "") {
+  document.write("<p>你搜的是：" + q + "</p>");   // document.write 会把字符串当 HTML 解析
+}
+</script>
+</body>
+</html>

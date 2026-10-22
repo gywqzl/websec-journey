@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Day 25 · DOM XSS 玩具靶场（B：# + innerHTML）</title>
+</head>
+<body>
+<h2>Day 25 玩具靶场 · 版本 B</h2>
+<p>这一版故意用 #（hash）。# 后面的东西浏览器根本不会发给服务器，正好用来证明：服务器从头到尾没见过我的 payload。</p>
+<div id="box">（这里会被 JS 写内容）</div>
+
+<script>
+var h = location.hash.substring(1);   // "#abc" → "abc"（substring(1) = 从第 2 个字符开始切）
+var box = document.getElementById("box");
+box.innerHTML = "你搜的是：" + h;     // sink：innerHTML 也把字符串当 HTML 解析
+</script>
+</body>
+</html>
