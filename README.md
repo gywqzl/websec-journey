@@ -20,6 +20,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | [`day23/`](day23/) | 属性上下文 XSS：不用标签，靠属性注入（PortSwigger） |
 | [`day24/`](day24/) | JS 字符串上下文 XSS：转义绕不过去就掀桌子（PortSwigger） |
 | [`day25/`](day25/) | DOM 型 XSS：服务器从没见过你的 payload（PortSwigger） |
+| [`day26/`](day26/) | 实战任务卡：给自建便签站做 XSS 审计（Day 16–25 综合） |
 
 ## 学习进度
 
@@ -33,6 +34,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | 23 | 属性上下文 XSS（attribute context）+ 事件属性 / autofocus | [`day23/README.md`](day23/README.md) |
 | 24 | JavaScript 字符串上下文 XSS + 转义符吃掉模型与 </script> 出口 | [`day24/README.md`](day24/README.md) |
 | 25 | DOM 型 XSS + source/sink 与 document.write 传送门 | [`day25/README.md`](day25/README.md) |
+| 26 | 第四次实战任务卡：五格上下文 + 证据链 + 审计报告 | [`day26/README.md`](day26/README.md) |
 
 （以后每学完一天，就在这里加一行）
 
