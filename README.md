@@ -21,6 +21,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | [`day24/`](day24/) | JS 字符串上下文 XSS：转义绕不过去就掀桌子（PortSwigger） |
 | [`day25/`](day25/) | DOM 型 XSS：服务器从没见过你的 payload（PortSwigger） |
 | [`day26/`](day26/) | 实战任务卡：给自建便签站做 XSS 审计（Day 16–25 综合） |
+| [`day27/`](day27/) | URL 格子：javascript: 协议 + jQuery href sink（PortSwigger） |
 
 ## 学习进度
 
@@ -35,6 +36,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | 24 | JavaScript 字符串上下文 XSS + 转义符吃掉模型与 </script> 出口 | [`day24/README.md`](day24/README.md) |
 | 25 | DOM 型 XSS + source/sink 与 document.write 传送门 | [`day25/README.md`](day25/README.md) |
 | 26 | 第四次实战任务卡：五格上下文 + 证据链 + 审计报告 | [`day26/README.md`](day26/README.md) |
+| 27 | URL 格子（href / javascript:）+ DOM 赋值 vs HTML 解析器 + 源码/活体 DOM 两视图 | [`day27/README.md`](day27/README.md) |
 
 （以后每学完一天，就在这里加一行）
 

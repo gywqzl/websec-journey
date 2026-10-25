@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>Day 27 前置知识包</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 52em; margin: 2em auto; line-height: 1.8; color: #222; }
+  code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; }
+  pre { background: #f7f7f7; border: 1px solid #ddd; padding: 10px; overflow-x: auto; }
+  .out { background: #eef6ff; border-left: 4px solid #4a90d9; padding: 8px 12px; margin: 8px 0; }
+  button { font-size: 15px; padding: 4px 12px; margin: 4px 4px 4px 0; cursor: pointer; }
+  .dim { color: #888; font-size: .92em; }
+  table { border-collapse: collapse; }
+  th, td { border: 1px solid #ccc; padding: 5px 10px; text-align: left; }
+</style>
+</head>
+<body>
+
+<h1>Day 27 前置知识包</h1>
+<p class="dim">四个新东西，每个先点按钮看结果，再回头看上面那段代码。</p>
+
+<h2>1. 元素对象：拿到「整个标签」，然后读它、写它</h2>
+<p>你 Day 14 就会这个：</p>
+<pre><code>document.getElementById('back')</code></pre>
+<p>它返回的<b>不是一段文字，是那个元素本身</b>（一整个 <code>&lt;a&gt;</code> 标签）。
+拿到之后存进一个变量，习惯起名 <code>el</code>（element 的缩写，<b>是我随便起的变量名，不是关键字</b>，跟 Day 14 的 <code>var</code> 一个性质）：</p>
+<pre><code>var el = document.getElementById('back');   // el 现在就是那个 &lt;a&gt; 元素
+el.href          // 读：这个元素的 href 值是什么
+el.href = '/new' // 写：直接赋值，页面上的链接立刻变</code></pre>
+<p>这跟你学过的 <code>el.value = 'x'</code>（改输入框内容）、<code>el.innerHTML = 'x'</code>（改元素里的东西）是<b>同一招</b>，只是这次的属性名换成了 <code>href</code>。<code>el.value</code> / <code>el.innerHTML</code> / <code>el.href</code> 全是“元素上的一个属性”，读写方式完全一样。</p>
+
+<p>下面这个链接就是 <code>id="back"</code> 的元素，点按钮读它、写它：</p>
+<p><a id="back" href="/old">← 我是那个链接（href 原本是 /old）</a></p>
+<button onclick="readHref()">读 el.href</button>
+<button onclick="writeHref()">写 el.href = '/new'</button>
+<div class="out" id="out1">（点上面的按钮）</div>
+
+<h2>2. URLSearchParams：把 <code>?a=1&amp;b=2</code> 变成能按名字查的表</h2>
+<p>你 Day 25 已经会 <code>location.search</code>（地址栏 <code>?</code> 及后面那整截，是个<b>字符串</b>）。要从中取出某个参数的值，浏览器自带了一个小工具：</p>
+<pre><code>var q = new URLSearchParams(location.search);  // 把查询串解析成一张“名字 → 值”的表
+q.get('a')       // 按名字查，返回 "1"
+q.get('nope')    // 查不到，返回 null（不是报错、不是空字符串）</code></pre>
+<p><code>new</code> + 名字 + 括号 = “造一个新的这种工具出来”（Day 14 你见过 <code>var</code>，这里是造对象，先照抄用法即可）。<code>.get()</code> 里的点号 = “用它的某个功能”，跟 <code>.innerHTML</code> 的点号一个意思。</p>
+<button onclick="parseQS()">解析当前地址栏</button>
+<div class="out" id="out2">（点上面的按钮；可以自己在地址栏加 <code>?a=1&amp;b=2</code> 后再点）</div>
+
+<h2>3. <code>||</code>：左边拿不到东西就用右边兜底</h2>
+<pre><code>var name = q.get('nope') || '没传';   // q.get 返回 null，null 算“没东西”，于是取右边的 '没传'</code></pre>
+<p><code>||</code> 是 JS 里的“或”。用在这里的惯用法是<b>兜底</b>：左边是 <code>null</code> 或空字符串，就取右边的值。它<b>不是 if 判断</b>，是“取值时挑一个”。</p>
+<button onclick="fallback()">试一下兜底</button>
+<div class="out" id="out3">（点上面的按钮）</div>
+
+<h2>4. jQuery：一个第三方 JS 库，只换了“找元素 / 改属性”的写法</h2>
+<p>jQuery 是别人写好放在网上的一个 <code>.js</code> 文件（老牌库，很多真实站点还在用）。页面里先引它，才能用它的功能：</p>
+<pre><code>&lt;script src="jquery.js"&gt;&lt;/script&gt;   &lt;!-- 引进这个库 --&gt;</code></pre>
+<p>它提供两个你今天要认出来的写法，<b>跟你会的东西一一对应</b>：</p>
+<table>
+<tr><th>你会（原生 JS）</th><th>jQuery 等价写法</th><th>说明</th></tr>
+<tr><td><code>document.getElementById('back')</code></td><td><code>$('#back')</code></td><td><code>$</code> 是 jQuery 提供的“找元素”函数；括号里写<b>选择器字符串</b></td></tr>
+<tr><td><code>el.href</code>（读属性）</td><td><code>$('#back').attr('href')</code></td><td><code>attr</code> = attribute（属性）的缩写</td></tr>
+<tr><td><code>el.href = '/new'</code>（写属性）</td><td><code>$('#back').attr('href', '/new')</code></td><td>两个参数 = 写；一个参数 = 读</td></tr>
+</table>
+<p>选择器里那个 <code>#</code> 是 CSS 的写法，意思是“<b>按 id 找</b>”（<code>#back</code> = id 为 back 的元素；<code>.back</code> 则是按 class 找）。注意这个 <code>#</code> 跟地址栏的 <code>#</code>（fragment）<b>没有关系</b>，只是符号长得一样。</p>
+<p class="dim">这一节没有可点的按钮（本地没放 jquery.js 文件）；等你在 PortSwigger 那个 lab 页面上按 F12 敲 <code>$('#backLink').attr('href')</code>，就是这条公式的活体验证。</p>
+
+<h2>5. <code>document.domain</code>：当前页面在哪个域名下</h2>
+<p><code>document</code> 就是“你这一页的文档对象”——Day 25 的 <code>document.write</code>、Day 21 的 <code>document.cookie</code> 都是它的成员。<code>.domain</code> 是它的一个属性，值是<b>当前页面的域名</b>。<code>location.href</code> 则是<b>当前页面的完整网址</b>。</p>
+<button onclick="domainInfo()">打印 document.domain</button>
+<div class="out" id="out4">（点上面的按钮）</div>
+
+<script>
+  // ---- 1. 元素对象：读 / 写 href ----
+  function readHref() {
+    var el = document.getElementById('back');   // el = 那个 <a> 元素本身
+    document.getElementById('out1').textContent = 'el.href = ' + el.href;
+  }
+  function writeHref() {
+    var el = document.getElementById('back');
+    el.href = '/new';                           // 直接赋值，页面链接立刻变
+    document.getElementById('out1').textContent =
+      '写完 —— el.href = ' + el.href + '（鼠标移到上面看看链接指向变了没）';
+  }
+
+  // ---- 2. URLSearchParams ----
+  function parseQS() {
+    var q = new URLSearchParams(location.search);
+    document.getElementById('out2').textContent =
+      'location.search = "' + location.search + '"  ｜  ' +
+      'q.get("a") = ' + q.get('a') + '  ｜  ' +
+      'q.get("nope") = ' + q.get('nope');
+  }
+
+  // ---- 3. || 兜底 ----
+  function fallback() {
+    var q = new URLSearchParams(location.search);
+    var a = q.get('a') || '没传（走了右边的兜底值）';
+    var nope = q.get('nope') || '没传（走了右边的兜底值）';
+    document.getElementById('out3').textContent =
+      'q.get("a") || 兜底  → ' + a + '  ｜  q.get("nope") || 兜底 → ' + nope;
+  }
+
+  // ---- 5. document.domain ----
+  function domainInfo() {
+    document.getElementById('out4').textContent =
+      'document.domain = ' + document.domain + '  ｜  location.href = ' + location.href;
+  }
+</script>
+
+</body>
+</html>

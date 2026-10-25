@@ -632,6 +632,100 @@ document.body.insertAdjacentHTML("beforeend", src) // 验证这段 HTML 会不�
 
 ---
 
+## Day 27 · URL 格子（`href` / `javascript:` 协议）：不用标签也不用引号
+
+> 五格表里最后一个格子：值落在「浏览器会把它当地址」的位置（`href` / `src` / `location`）。
+
+### 核心模型：scheme（协议）决定「交给谁处理」
+
+| scheme | 交给谁 | 结果 |
+|---|---|---|
+| `http:` / `https:` | 网络栈 | 发请求、换页面 |
+| `mailto:` | 邮件客户端 | 打开写信窗口 |
+| `javascript:` | **JS 引擎** | **把 `:` 后面整段当代码，在「当前页面」里执行**，不发请求 |
+| `javascript://...` | —— | ❌ 没有这种写法，`:` 后面**直接就是代码** |
+
+三要点：① `javascript:alert(1)` 无 `//`；② **执行环境 = 当前页面**（`document.cookie` 能直接用）；③ **触发时机 = 点击那一刻**，不是页面加载。
+
+### 和「属性值格子」的关系：同一位置，不同语义
+
+| | 属性值格子（Day 23） | URL 格子（Day 27） |
+|---|---|---|
+| 值怎么进去 | 服务器**拼进 HTML 文本** | 常见：页面 JS **给 DOM 属性赋值** |
+| 谁在读这个字符串 | **HTML 解析器** | 无解析器，只是赋值 |
+| 逃逸什么 | 包裹它的**引号**（关门 → 加 `onerror=`） | 逃不了，改**换协议**（`javascript:`） |
+| 毒在哪 | `<>` / `"` | 地址的 **scheme** |
+
+> 一句话：**属性注入需要 HTML 解析器在场；DOM 赋值没有解析器，只有赋值**（连「关门」这个动作都不存在）。
+
+### jQuery 写法对照（看到这些就认识它）
+
+| 原生（会） | jQuery 等价 |
+|---|---|
+| `document.getElementById('back')` | `$('#back')` |
+| `el.href`（读） | `$('#back').attr('href')` |
+| `el.href = '/new'`（写） | `$('#back').attr('href', '/new')` |
+
+选择器里的 `#` = “按 id 找”（CSS 写法），**与地址栏的 `#`（fragment）无关**。
+
+### 三张视图（看“改没改”全靠它们）
+
+| 看哪里 | 看的是什么 | 能见 JS 改动 |
+|---|---|---|
+| `Ctrl+U` 源代码 | 服务器原始字节（**定格**） | ❌ 永远不能 |
+| `F12 → Elements` | 活体 DOM | ✅ |
+| `F12 → Console` 求值 | 直接问 DOM 要值 | ✅ |
+
+**“死”的含义 = 收到那一刻定格**，不是“不含用户输入”：`/server` 里有你的值，因为**服务器打印时给你排的版**；`/dom` 没有，因为店家印的是**固定模板**，你的字是你回家自己写上去的。
+→ 改 URL 后源码变 = **重新下单、重新打印**（新请求新字节），不是旧字节被改。
+
+### 取证：证明“服务器没参与”
+
+| 手段 | 命令 | 说明 |
+|---|---|---|
+| 标记值 | `?returnPath=/MARKER123` | 探针必须「只可能来自你」，别用 `/`（与默认值撞车） |
+| 指纹对照 | `curl -s "…/dom?returnPath=AAA" \| md5sum` vs `BBB` | **md5 相同 = 输出与输入无关** |
+| 计数 | `curl -s "…" \| grep -c MARKER123` | `0` 是结论，但要先排除“请求没发出/发错门” |
+| 活体 DOM | Edge 无头：`msedge --headless=new --dump-dom "URL"` | 序列化**跑完 JS** 的 DOM（等价于 Console 里看 `el.outerHTML`） |
+
+### 修复对照（白名单，不是转义）
+
+服务端只放行「以 `/` 开头、不含 `:`、不以 `//` 开头」的值，其它一律换成固定路径。
+两条都要卡，因为浏览器把 `\` 也当 `/`（`/\evil.example` 等价于 `//evil.example` = 外站）。
+
+### ⚠️ 坑
+
+1. **`Ctrl+U` 里搜不到 = 可能“没生效”，也可能“生效了但没经过服务器”** → 用 `F12 → Elements` 或 Console 补一刀。
+2. **探针用默认值（`/`）等于没探** → 一定换成 `MARKER123` 这类唯一标记。
+3. **把页面右上「Solved」药丸当“本次动作的反馈”** → 它可能早就是 solved 的历史残留；真判据是**弹窗/Console**。
+4. **过滤 `<>` 的白名单看不见 scheme** → 它检查的根本不是这块；`javascript:` 里一个标签字符都没有。
+5. **在地址栏直接粘贴 `javascript:alert(1)`** → Chrome 会删掉 `javascript:` 前缀（防粘贴执行），要手打；作为参数值（`?x=javascript:…`）不受影响。
+6. **前台跑 `python3 xxx.py` 的终端会被占死**（`ps` 的 `STAT` 带 `+`）→ 敲字没反应 ≠ 键盘坏了；`Ctrl+C` 是信号，能打断。
+7. **触摸键盘上的 `Ctrl` 是锁存开关**（点一次=按下，不自动松手）→ 点第二次才松开；期间物理键盘+屏幕键盘全都“打不了字”。
+8. **`.ps1` 存成 UTF-8 无 BOM，PowerShell 5.1 按 GBK 读** → 中文把字符串引号咬断、脚本直接不跑；给 Windows 的脚本一律纯 ASCII。
+
+### 命令卡
+
+```bash
+# 起靶场（后台，不占终端）
+cd ~/day27 && python3 href_demo.py > /tmp/h27.log 2>&1 &
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8084/    # 200
+pkill -f href_demo.py                                              # 停
+
+# 服务端拼 vs 浏览器改
+curl -s 'http://127.0.0.1:8084/server?returnPath=javascript:alert(1)' | grep -o 'id="back"[^>]*'
+curl -sS -o /tmp/d.html -w 'code=%{http_code} size=%{size_download}\n' 'http://127.0.0.1:8084/dom?returnPath=javascript:alert(1)'
+grep -c 'javascript:alert' /tmp/d.html     # 0
+
+# 浏览器渲染后的活体 DOM（证明 JS 真执行了）
+'/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' \
+  --headless=new --disable-gpu --dump-dom 'http://127.0.0.1:8084/dom?returnPath=javascript:alert(1)' \
+  | grep -o 'id="back"[^>]*'
+
+# 自测脚本（断言“照步骤做时现象真会出现”）
+bash ~/day27/verify.sh
+```
+
 ## 🧩 常用组合拳（跨 Day 复用）
 
 | 场景 | 命令 |
@@ -664,3 +758,9 @@ document.body.insertAdjacentHTML("beforeend", src) // 验证这段 HTML 会不�
 | 属性注入收尾（值没加引号时） | payload 末尾补一个**空格**，把「值的边界」划出来，否则后面的引号会被吞进值里 |
 | 存储型留证 | `curl -d` 存（`303`，body 空）→ `curl` 干净 URL + `grep -o` 落地 → 两步一起才算证据 |
 | 报告交前自查 | 每条有没有「发现/思路/依据」→ 上下文是不是五格里的名字 → 危险度理由挂没挂三维度 → 有没有把页面自带 JS 当假阳性 |
+| 判「是不是 URL 格子」 | 落点是 `href` / `src` / `location` → 这一格逃的是**协议**，不是引号 |
+| 造一个可执行的地址 | `javascript:` + 代码（无 `//`）→ 写进参数 → **点链接**才执行 |
+| 证明「值没经过服务器」 | 同一个 URL 换两个不同参数 → `md5sum` 相同 / `grep -c 标记` = 0 |
+| 证明「JS 真的改了 DOM」 | `msedge --headless=new --dump-dom "URL"` \| `grep` 目标属性（或 Console 敲 `el.outerHTML`） |
+| 分清「源码」和「活体 DOM」 | `Ctrl+U` = 服务器字节（定格）；`F12 → Elements` = JS 改过的活体树 |
+| 修 href 类注入 | 白名单：只放行 `/` 开头、不含 `:`、不以 `//` 开头；别把用户输入当 `href` |
