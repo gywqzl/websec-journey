@@ -117,3 +117,5 @@ trackSearch.toString()
 ## 八、我学到了什么（费曼）
 
 今天学习了 DOM 型 XSS。这种类型需要找 source 和 sink，找内容在哪能写入、在哪能被执行。DOM 型的 XSS 在 `Ctrl+U` 里搜不到，没有被打印出来。页面 JS 会去读地址栏或者别的信息（主要用 `location.search`）得到那个字符串，然后通过 `document.write` 等等倒进 HTML 层进行执行。
+
+另外，服务器在这条链上只发了那个固定的死页面，从来没收到过 payload。
