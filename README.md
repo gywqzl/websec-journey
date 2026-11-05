@@ -22,6 +22,7 @@ Linux → 计算机网络 → HTTP → Web 基础（HTML/JS）→ Python → Web
 | [`day25/`](day25/) | DOM 型 XSS：服务器从没见过你的 payload（PortSwigger） |
 | [`day26/`](day26/) | 实战任务卡：给自建便签站做 XSS 审计（Day 16–25 综合） |
 | [`day27/`](day27/) | URL 格子：javascript: 协议 + jQuery href sink（PortSwigger） |
+| [`review/`](review/) | D1–D28 摸底后的四条链复习（2026-11） |
 
 ## 学习进度
 
