@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8">
+<body>
+<div id="out">start</div>
+<script>
+var log = [];
+
+// 1. eval 两副面孔
+log.push('eval("1+1")=' + eval('1+1'));
+globalThis.hit = 0;
+eval('globalThis.hit = 1');
+log.push('eval 当代码跑后 hit=' + globalThis.hit);
+
+// 2. setTimeout 传字符串（浏览器老特性）
+globalThis.hit2 = 0;
+var userInput = 'globalThis.hit2 = 2';
+try { setTimeout(userInput, 0); log.push('setTimeout(字符串) 接受了这个字符串'); }
+catch (e) { log.push('setTimeout(字符串) 抛错 ' + e.name); }
+
+// 3. textContent vs innerHTML 同一个 payload
+var a = document.createElement('div');
+a.textContent = '<img src=x onerror="globalThis.hit3=1">';
+var b = document.createElement('div');
+b.innerHTML = '<img src=x onerror="globalThis.hit3=1">';
+globalThis.hit3 = 0;
+document.body.appendChild(a);
+document.body.appendChild(b);
+
+setTimeout(function () {
+  log.push('setTimeout 字符串版执行后 hit2=' + globalThis.hit2);
+  log.push('textContent 生出 img 元素? ' + (a.querySelector('img') ? '有' : '没有'));
+  log.push('innerHTML 生出 img 元素? ' + (b.querySelector('img') ? '有' : '没有'));
+  log.push('onerror 触发后 hit3=' + globalThis.hit3);
+  document.getElementById('out').textContent = log.join(' ;; ');
+}, 300);
+</script>
